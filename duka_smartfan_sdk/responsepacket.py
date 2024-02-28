@@ -1,6 +1,4 @@
 """Implements a class for the UDP data packet"""
-from .mode import Mode
-from .speed import Speed
 from .dukapacket import DukaPacket
 
 
@@ -8,38 +6,41 @@ class ResponsePacket(DukaPacket):
     """A udp data packet from the duka device."""
 
     parameter_size = {
-        0x01: 1,  # On off
-        0x02: 1,  # Speed 1-3 255=manual
-        0x06: 1,  # Boot mode
-        0x07: 1,  # Timer mode
-        0x0B: 3,  # Timer countdown
-        0x0F: 1,  # Humidity sensor activation
-        0x14: 1,  # Relay sensor activation
-        0x16: 1,  # 0-10v sensor activation
-        0x19: 1,  # Humidity threshold
-        0x24: 2,  # Current RTC battery voltage 0-5000mv
-        0x25: 1,  # Current humidity 0-100
-        0x2D: 1,  # Current 0-10v sensor 0-100
-        0x32: 1,  # Current relay sensor state
-        0x44: 1,  # Manual speed
-        0x4A: 2,  # Fan 1 speed 0-5000rpm
-        0x4B: 2,  # Fan 2 speed 0-5000rpm
-        0x64: 3,  # Filter timer byte 1=minutes, byte 2=hours, byte 3=days
-        0x65: 1,  # Reset filter timer (1 byte data is ignored)
-        0x66: 1,  # Boost mode deactivation delay 0-60 minutes
-        0x6F: 3,  # RTC time
-        0x70: 4,  # RTC calender
-        0x72: 1,  # Weekly schedule
-        0x77: 6,  # Schedule setup
-        0x7C: 16,  # device search
-        0x7D: 0,  # Device password
-        0x7E: 4,  # MAchine hours
-        0x80: 1,  # Reset alarms
-        0x83: 1,  # Alarm indicator 0=no,1=Alarm, 2=warning
-        0x85: 1,  # Cloud server operation permission
+        0x01: 1,  # On off 0-2 (off, on, invert)
+        0x02: 1,  # Battery status 0-1 (discharged, normal rate)
+        0x03: 1,  # 24 hour mode 0-1 (off, on, invert)
+        0x04: 2,  # Fan speed (0-6000 RPM)
+        0x05: 1,  # Boost mode
+        0x06: 3,  # Boost mode countdown timer in seconds (1794sec)
+        0x07: 1,  # Current status of the built-in timer 0-1 (off, on)
+        0x08: 1,  # Current status of fan operation by humidity sensor 0-1 (off, on)
+        0x0A: 1,  # Current status of fan operation by temperature sensor 0-1 (off, on)
+        0x0B: 1,  # Current status of fan operation by motion sensor 0-1 (off, on)
+        0x0C: 1,  # Current status of fan operation by signal from an external switch 0-1 (off, on)
+        0x0D: 1,  # Current status of fan operation in interval ventilation mode 0-1 (off, on)
+        0x0E: 1,  # Current status of fan operation in SILENT mode 0-1 (off, on)
+        0x0F: 1,  # Permission of operation based on humidity sensor readings 0-2 (off, automatic, manual)
+        0x11: 1,  # Permission of operation based on temperature sensor readings (off, on, invert)
+        0x12: 1,  # Permission of operation based on motion sensor readings (off, on, invert)
+        0x13: 1,  # Permission of operation based on signal from an external switch
+        0x14: 1,  # Humidity manual mode percentage (0-100)
+        0x16: 1,  # Temperature mode temperature (18-36)
+        0x17: 1,  # ??? (10)
+        0x18: 1,  # Max mode percentage (30-100)
+        0x1A: 1,  # Silent mode percentage (30-100)
+        0x1B: 1,  # Interval ventilation percentage (30-100)
+        0x1D: 1,  # Interval ventilation mode (off, on, invert)
+        0x1E: 1,  # Silent mode activation (off, on, invert)
+        0x1F: 3,  # Silent mode start time in seconds (72000sec)
+        0x20: 3,  # Silent mode end time in seconds (25200sec)
+        0x21: 3,  # Current time of the fan internal clock in seconds
+        0x23: 1,  # Turn off delay timer/Boost setpoint 0,2,3,4,6 (5, 15, 30, 60min)
+        0x24: 1,  # Turn on delay timer 0,1,2 (0, 2, 5min)
+        0x25: 1,  # Resetting parameters to factory settings
+        0x2E: 1,  # Humidity (0-100)
+        0x31: 1,  # Temperature
+        0x7C: 16,  # Device search
         0x86: 6,  # Firmware version and date
-        0x87: 1,  # Restore factory settings
-        0x88: 1,  # Filter replacement 0=ok, 1=replace
         0x94: 1,  # Wifi mode
         0x95: 0,  # Wifi name in client mode
         0x96: 0,  # Wifi password
@@ -49,7 +50,7 @@ class ResponsePacket(DukaPacket):
         0x9C: 4,  # IP Address
         0x9D: 4,  # Subnet mask
         0x9E: 4,  # Gateway
-        0xB7: 1,  # Ventilator mode 0=ventilation,1=heat recovery,2=supply
+        0xA3: 4,  # Current wifi module IP address
         0xB9: 2,  # Unit type
     }
 
@@ -58,13 +59,10 @@ class ResponsePacket(DukaPacket):
         self.device_id = None
         self.device_password = None
         self.is_on = None
-        self.speed: Speed = None
-        self.manualspeed = None
-        self.fan1rpm = None
+        self.battery_status = None
+        self.temperature = None
+        self.fan_speed = None
         self.humidity = None
-        self.mode: Mode = None
-        self.filter_alarm = None
-        self.filter_timer = None
         self.search_device_id = None
         self.firmware_version = None
         self.firmware_date = None
@@ -110,6 +108,13 @@ class ResponsePacket(DukaPacket):
         self._pos += strlen
         return txt
 
+    def debug_parameter(self, parameter, size) -> str:
+        return ", ".join(
+            parameter,
+            size,
+            sum([self._data[self._pos + x] << 8 * x for x in range(size)]),
+        )
+
     def read_parameters(self) -> bool:
         while self._pos < len(self._data) - 3:
             parameter = self.read_byte()
@@ -122,18 +127,19 @@ class ResponsePacket(DukaPacket):
                 if parameter not in self.parameter_size:
                     return False
                 size = self.parameter_size[parameter]
+
             if parameter == self.Parameters.ON_OFF.value:
                 self.is_on = self._data[self._pos] != 0
-            elif parameter == self.Parameters.SPEED.value:
-                self.speed = self._data[self._pos]
-            elif parameter == self.Parameters.MANUAL_SPEED.value:
-                self.manualspeed = self._data[self._pos]
-            elif parameter == self.Parameters.FAN1RPM.value:
-                self.fan1rpm = self._data[self._pos] + (self._data[self._pos + 1] << 8)
-            elif parameter == self.Parameters.CURRENT_HUMIDITY.value:
+            if parameter == self.Parameters.BATTERY_STATUS.value:
+                self.battery_status = self._data[self._pos]
+            elif parameter == self.Parameters.TEMPERATURE.value:
+                self.temperature = self._data[self._pos]
+            elif parameter == self.Parameters.FAN_SPEED.value:
+                self.fan_speed = self._data[self._pos] + (
+                    self._data[self._pos + 1] << 8
+                )
+            elif parameter == self.Parameters.HUMIDITY.value:
                 self.humidity = self._data[self._pos]
-            elif parameter == self.Parameters.VENTILATION_MODE.value:
-                self.mode = self._data[self._pos]
             elif parameter == self.Parameters.READ_FIRMWARE_VERSION.value:
                 major = self._data[self._pos]
                 minor = self._data[self._pos + 1]
@@ -144,19 +150,11 @@ class ResponsePacket(DukaPacket):
                 self.firmware_date = f"{day}-{month}-{year}"
             elif parameter == self.Parameters.UNIT_TYPE.value:
                 self.unit_type = self._data[self._pos]
-            elif parameter == self.Parameters.FILTER_ALARM.value:
-                self.filter_alarm = self._data[self._pos]
-            elif parameter == self.Parameters.FILTER_TIMER.value:
-                self.filter_timer = (
-                    self._data[self._pos]
-                    + (self._data[self._pos + 2] * 24 + self._data[self._pos + 1]) * 60
-                )
-            elif parameter == self.Parameters.SEARCH.value:
+            elif parameter == self.Parameters.DEVICE_SEARCH.value:
                 self.search_device_id = ""
                 for i in range(self._pos, self._pos + 16):
                     self.search_device_id += chr(self._data[i])
+
             self._pos += size
-        if self.is_on is not None and not self.is_on:
-            self.speed = Speed.OFF
 
         return True

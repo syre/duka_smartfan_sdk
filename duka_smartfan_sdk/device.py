@@ -1,11 +1,9 @@
-"""Implements the duka one device class """
+"""Implements the duka smartfan wifi device class """
 import time
-from .mode import Mode
-from .speed import Speed
 
 
 class Device:
-    """A class representing a single Duke One Device"""
+    """A class representing a single Duka Smartfan Wifi Device"""
 
     def __init__(
         self,
@@ -17,13 +15,9 @@ class Device:
         self._id = deviceid
         self._password = password
         self._ip_address = ip_address
-        self._speed: Speed = None
-        self._mode: Mode = None
-        self._manualspeed: int = None
-        self._fan1rpm: int = None
+        self._fan_speed: int = None
         self._humidity: int = None
-        self._filter_alarm = False
-        self._filter_timer = None
+        self._temperature: int = None
         self._changeevent = onchange
         self._firmware_version = None
         self._firmware_date = None
@@ -47,34 +41,14 @@ class Device:
         return self._ip_address
 
     @property
-    def speed(self) -> Speed:
-        """Return the speed of the device"""
-        return self._speed
+    def fan_speed(self) -> int:
+        """Return the fan_speed of the device"""
+        return self._fan_speed
 
     @property
-    def manualspeed(self) -> int:
-        """Return the manual speed of the device"""
-        return self._manualspeed
-
-    @property
-    def fan1rpm(self) -> int:
-        """Return the fan1 rpm of the device"""
-        return self._fan1rpm
-
-    @property
-    def mode(self) -> Mode:
-        """Return the mode of the device"""
-        return self._mode
-
-    @property
-    def filter_alarm(self) -> bool:
-        """Return the filter alarm of the device"""
-        return self._filter_alarm
-
-    @property
-    def filter_timer(self) -> int:
-        """Return the filter timer in minutes"""
-        return self._filter_timer
+    def temperature(self) -> int:
+        """Return the temperature."""
+        return self._temperature
 
     @property
     def humidity(self) -> int:
@@ -98,8 +72,8 @@ class Device:
     def is_initialized(self):
         """Returns True if the device has initilized.
 
-        The device is initialize once the get initial get firmware packet has been received.
-        This packet is send when the device is added to the client
+        The device is initialized once the get initial get firmware packet has been received.
+        This packet is sent when the device is added to the client
         """
         return self.firmware_version is not None
 

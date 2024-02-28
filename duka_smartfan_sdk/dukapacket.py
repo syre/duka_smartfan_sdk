@@ -1,8 +1,7 @@
 """Implements a class for the UDP data packet"""
 from enum import Enum
+
 from .device import Device
-from .mode import Mode
-from .speed import Speed
 
 
 class DukaPacket:
@@ -18,18 +17,51 @@ class DukaPacket:
 
     class Parameters(Enum):
         ON_OFF = 0x01
-        SPEED = 0x02
-        CURRENT_HUMIDITY = 0x25
-        MANUAL_SPEED = 0x44
-        FAN1RPM = 0x4A
-        FILTER_TIMER = 0x64
-        RESET_FILTER_TIMER = 0x65
-        SEARCH = 0x7C
-        RESET_ALARMS = 0x80
-        READ_ALARM = 0x83
+        BATTERY_STATUS = 0x02
+        TWENTY_FOUR_HOUR_MODE = 0x03
+        FAN_SPEED = 0x04
+        BOOST_MODE = 0x05
+        BOOST_MODE_COUNTDOWN_TIMER = 0x06
+        BUILTIN_TIMER_STATUS = 0x07
+        HUMIDITY_SENSOR_STATUS = 0x08
+        TEMPERATURE_SENSOR_STATUS = 0x0A
+        MOTION_SENSOR_STATUS = 0x0B
+        EXTERNAL_SWITCH_STATUS = 0x0C
+        INTERNAL_VENTILATION_MODE_STATUS = 0x0D
+        SILENT_MODE_STATUS = 0x0E
+        HUMIDITY_MODE = 0x0F
+        TEMPERATURE_MODE = 0x11
+        MOTION_MODE = 0x12
+        EXTERNAL_SWITCH_MODE = 0x13
+        HUMIDITY_MANUAL_MODE_PERCENTAGE = 0x14
+        TEMPERATURE_MODE_TEMPERATURE = 0x16
+        ONE_SEVEN = 0x17
+        MAX_MODE_PERCENTAGE = 0x18
+        SILENT_MODE_PERCENTAGE = 0x1A
+        INTERVAL_VENTILATION_PERCENTAGE = 0x1B
+        INTERVAL_VENTILATION_ACTIVATION = 0x1D
+        SILENT_MODE_ACTIVATION = 0x1E
+        SILENT_MODE_START = 0x1F
+        SILENT_MODE_END = 0x20
+        FAN_INTERNAL_CLOCK_TIME = 0x21
+        TURN_OFF_DELAY_TIMER = 0x23
+        TURN_ON_DELAY_TIMER = 0x24
+        RESET_TO_FACTORY_SETTINGS = 0x25
+        HUMIDITY = 0x2E
+        TEMPERATURE = 0x31
+        DEVICE_SEARCH = 0x7C
         READ_FIRMWARE_VERSION = 0x86
-        FILTER_ALARM = 0x88
-        VENTILATION_MODE = 0xB7
+        WIFI_MODE = 0x94
+        WIFI_NAME = 0x95
+        WIFI_PASSWORD = 0x96
+        WIFI_ENCRYPTION = 0x99
+        WIFI_FREQUENCY = 0x9A
+        WIFI_DHCP = 0x9B
+        WIFI_IP_ADDRESS = 0x9C
+        WIFI_SUBNET_MASK = 0x9D
+        WIFI_GATEWAY = 0x9E
+        WIFI_APPLY_PARAMETERS = 0xA0
+        WIFI_MODULE_IP_ADDRESS = 0xA3
         UNIT_TYPE = 0xB9
 
     def __init__(self):
@@ -41,33 +73,7 @@ class DukaPacket:
         """Initialize a search command packet"""
         self.__build_data("DEFAULT_DEVICEID", "")
         self.__add_byte(DukaPacket.Func.READ.value)
-        self.__add_byte(DukaPacket.Parameters.SEARCH.value)
-        self.__add_checksum()
-
-    def initialize_speed_cmd(self, device: Device, speed: Speed):
-        """Initialize a speed command packet to be sent to a device"""
-        self.__build_data(device.device_id, device.password)
-        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
-        self.__add_byte(DukaPacket.Parameters.SPEED.value)
-        self.__add_byte(speed)
-        self.__add_checksum()
-
-    def initialize_manualspeed_cmd(self, device: Device, manualspeed: int):
-        """Initialize a manual speed command packet to be sent to a device
-        The manuals speed is in the interval 0-255
-        """
-        self.__build_data(device.device_id, device.password)
-        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
-        self.__add_byte(DukaPacket.Parameters.MANUAL_SPEED.value)
-        self.__add_byte(manualspeed)
-        self.__add_checksum()
-
-    def initialize_mode_cmd(self, device: Device, mode: Mode):
-        """Intialize a mode command packet to be sent to a device"""
-        self.__build_data(device.device_id, device.password)
-        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
-        self.__add_byte(DukaPacket.Parameters.VENTILATION_MODE.value)
-        self.__add_byte(mode)
+        self.__add_byte(DukaPacket.Parameters.DEVICE_SEARCH.value)
         self.__add_checksum()
 
     def initialize_on_cmd(self, device: Device):
@@ -86,30 +92,37 @@ class DukaPacket:
         self.__add_byte(0x00)
         self.__add_checksum()
 
+    def initialize_boost_on_cmd(self, device: Device):
+        """Initialize a Boost on command packet to be sent to a device"""
+        self.__build_data(device.device_id, device.password)
+        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
+        self.__add_byte(DukaPacket.Parameters.BOOST_MODE.value)
+        self.__add_byte(0x01)
+        self.__add_checksum()
+
+    def initialize_boost_off_cmd(self, device: Device):
+        """Initialize a Boost off command packet to be sent to a device"""
+        self.__build_data(device.device_id, device.password)
+        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
+        self.__add_byte(DukaPacket.Parameters.BOOST_MODE.value)
+        self.__add_byte(0x00)
+        self.__add_checksum()
+
     def initialize_status_cmd(self, device: Device):
         """Initialize a status command packet to be sent to a device"""
         self.__build_data(device.device_id, device.password)
         self.__add_byte(self.Func.READ.value)
         self.__add_byte(self.Parameters.ON_OFF.value)
-        self.__add_byte(self.Parameters.VENTILATION_MODE.value)
-        self.__add_byte(self.Parameters.SPEED.value)
-        self.__add_byte(self.Parameters.MANUAL_SPEED.value)
-        self.__add_byte(self.Parameters.FAN1RPM.value)
-        self.__add_byte(self.Parameters.FILTER_ALARM.value)
-        self.__add_byte(self.Parameters.FILTER_TIMER.value)
-        self.__add_byte(self.Parameters.CURRENT_HUMIDITY.value)
-        self.__add_checksum()
-
-    def initialize_reset_filter_alarm_cmd(self, device: Device):
-        """Initialize a reset filter alarm command packet to be sent to a
-        device"""
-        self.__build_data(device.device_id, device.password)
-        self.__add_byte(self.Func.WRITE.value)
-        self.__add_byte(self.Parameters.RESET_FILTER_TIMER.value)
+        self.__add_byte(self.Parameters.BATTERY_STATUS.value)
+        self.__add_byte(self.Parameters.TWENTY_FOUR_HOUR_MODE.value)
+        self.__add_byte(self.Parameters.FAN_SPEED.value)
+        self.__add_byte(self.Parameters.HUMIDITY.value)
+        self.__add_byte(self.Parameters.TEMPERATURE.value)
+        self.__add_byte(self.Parameters.UNIT_TYPE.value)
         self.__add_checksum()
 
     def initialize_get_firmware_cmd(self, device: Device):
-        """Initialize a reset filter alarm command packet to be sent to a
+        """Initialize a get firmware command packet to be sent to a
         device"""
         self.__build_data(device.device_id, device.password)
         self.__add_byte(self.Func.READ.value)
