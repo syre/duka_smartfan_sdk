@@ -101,6 +101,13 @@ class DukaClient:
         data = packet.data
         self.__send_data(device, data)
 
+    def toggle_boost(self, device: Device):
+        """Turn on boost for the specified device"""
+        packet = DukaPacket()
+        packet.initialize_boost_toggle_cmd(device)
+        data = packet.data
+        self.__send_data(device, data)
+
     def validate_device(
         self, device_id: str, password: str = None, ip_address: str = "<broadcast>"
     ) -> Device:

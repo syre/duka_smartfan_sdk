@@ -46,7 +46,13 @@ def main():
     print(f"Firmware date: {device.firmware_date}")
     print(f"Unit type: {device.unit_type}")
     while True:
-        print("Press one key and enter. 1 for boost on, 2 for boost off, q for quit")
+        print(
+            "Press one key and enter. "
+            "1 for boost on, "
+            "2 for boost off, "
+            "3 for boost toggle, "
+            "q for quit"
+        )
         char = sys.stdin.read(2)[0]
         if char == "q":
             break
@@ -54,6 +60,8 @@ def main():
             client.turn_boost_on(device)
         if char == "2":
             client.turn_boost_off(device)
+        if char == "3":
+            client.toggle_boost(device)
 
     print("Closing")
     client.close()
@@ -62,4 +70,5 @@ def main():
     exit(0)
 
 
-main()
+if __name__ == "__main__":
+    main()

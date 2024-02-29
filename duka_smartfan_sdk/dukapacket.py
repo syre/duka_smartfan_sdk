@@ -92,6 +92,14 @@ class DukaPacket:
         self.__add_byte(0x00)
         self.__add_checksum()
 
+    def initialize_boost_toggle_cmd(self, device: Device):
+        """Initialize a Boost toggle command packet to be sent to a device"""
+        self.__build_data(device.device_id, device.password)
+        self.__add_byte(DukaPacket.Func.WRITEREAD.value)
+        self.__add_byte(DukaPacket.Parameters.BOOST_MODE.value)
+        self.__add_byte(0x02)
+        self.__add_checksum()
+
     def initialize_boost_on_cmd(self, device: Device):
         """Initialize a Boost on command packet to be sent to a device"""
         self.__build_data(device.device_id, device.password)
