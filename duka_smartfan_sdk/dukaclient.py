@@ -257,6 +257,9 @@ class DukaClient:
         if device._ip_address is not None and ip_address != device._ip_address:
             self._ip_address = ip_address
             haschange = True
+        # use fan speed as proxy for "active"
+        if packet.fan_speed is not None and bool(packet.fan_speed) != device._is_active:
+            device._is_active = bool(packet.fan_speed)
         if packet.humidity is not None and packet.humidity != device._humidity:
             device._humidity = packet.humidity
             haschange = True

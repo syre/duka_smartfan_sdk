@@ -15,6 +15,7 @@ def onchange(device: Device):
     print(
         f"ip: {device.ip_address},"
         f" device id: {device.device_id},"
+        f" is_active: {device.is_active},"
         f" fan_speed: {device.fan_speed},"
         f" humidity: {device.humidity},"
         f" temperature: {device.temperature},"

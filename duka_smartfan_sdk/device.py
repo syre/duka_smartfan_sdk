@@ -15,6 +15,7 @@ class Device:
         self._id = deviceid
         self._password = password
         self._ip_address = ip_address
+        self._is_active: bool = None
         self._fan_speed: int = None
         self._humidity: int = None
         self._temperature: int = None
@@ -39,6 +40,11 @@ class Device:
     def ip_address(self) -> str:
         """Return the IP of the device"""
         return self._ip_address
+
+    @property
+    def is_active(self) -> bool:
+        """Return whether the device is active"""
+        return self._is_active
 
     @property
     def fan_speed(self) -> int:
